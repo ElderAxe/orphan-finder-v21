@@ -26,6 +26,15 @@ local function alert_icon(entity)
   return {type = "virtual", name = "signal-red"}
 end
 
+-- Localised alert text for an orphan, distinct for belts and pipes
+local function alert_message(entity)
+  if entity.type == "underground-belt" then
+    return {"orphans.alert-belt"}
+  else
+    return {"orphans.alert-pipe"}
+  end
+end
+
 -- Create marker + clickable alert for an orphan, stored in storage.arrows[player_index][entity.unit_number]
 local function create_arrow(entity, player_index)
   storage.arrows = storage.arrows or {}
@@ -40,7 +49,7 @@ local function create_arrow(entity, player_index)
   local player = game.get_player(player_index)
   if player then
     -- Clickable alert in the alert list; clicking it focuses the camera on the orphan
-    player.add_custom_alert(entity, alert_icon(entity), {"orphans.alert-text"}, true)
+    player.add_custom_alert(entity, alert_icon(entity), alert_message(entity), true)
   end
 end
 
@@ -289,5 +298,22 @@ script.on_configuration_changed(function()
   end
   for _,player in pairs(game.players) do
     player.set_shortcut_toggled("orphan-finder-toggle", false)
+  end
+end)
+
+-- Custom alerts fade after a few seconds unless re-added, so refresh every second while any
+-- markers are active. Re-adding the same alert just resets its timer (it does not stack).
+script.on_nth_tick(60, function()
+  if not storage.arrows then return end
+  for player_index, set in pairs(storage.arrows) do
+    local player = game.get_player(player_index)
+    if player then
+      for _, marker in pairs(set) do
+        local target = marker.target
+        if target and target.valid then
+          player.add_custom_alert(target, alert_icon(target), alert_message(target), true)
+        end
+      end
+    end
   end
 end)

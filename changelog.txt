@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.4.0
+Date: 2026.07.01
+  Changes:
+    - Belt and pipe orphans now raise distinct alerts, each with its own icon and text.
+  Bugfixes:
+    - Orphan alerts no longer disappear from the alert list after a few seconds; they are now
+      refreshed every second for as long as the markers are shown.
+---------------------------------------------------------------------------------------------------
 Version: 1.3.1
 Date: 2026.07.01
   Bugfixes:
