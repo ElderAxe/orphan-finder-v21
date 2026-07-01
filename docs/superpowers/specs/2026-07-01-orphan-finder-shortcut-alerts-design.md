@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-01
 **Mod:** `orphan-finder-v21` (Factorio 2.1 port of GotLag's Orphan Finder)
-**Status:** Design — pending user review
+**Status:** Implemented in v1.3.0
 
 ## Goal
 

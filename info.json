@@ -1,6 +1,6 @@
 {
 	"name": "orphan-finder-v21",
-	"version": "1.2.3",
+	"version": "1.3.0",
 	"title": "Orphan Finder (2.1)",
 	"author": "GotLag",
 	"description": "Adds a hotkey to highlight unconnected undergound pipes/belts near the player.",

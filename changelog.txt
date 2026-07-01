@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.3.0
+Date: 2026.07.01
+  Features:
+    - Added a shortcut-bar (toolbar) button that toggles orphan highlighting, mirroring the Shift+O
+      keybind. The button stays lit while orphans are highlighted and turns off automatically when
+      none are found or the last orphan is resolved.
+    - Each highlighted orphan now also raises a clickable alert; clicking it in the alert list
+      focuses the camera on the problematic belt/pipe, and it pings the map view.
+---------------------------------------------------------------------------------------------------
 Version: 1.2.3
 Date: 2026.07.01
   Changes:
