@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.3
+Date: 2026.07.01
+  Changes:
+    - Updated for Factorio 2.1 (now requires base >= 2.1).
+    - Republished as "orphan-finder-v21" for the 2.1 mod portal; no gameplay changes from 1.2.2.
+  Bugfixes:
+    - Scoped internal helper functions to the mod so they no longer risk clashing with other mods' globals.
+    - Guard marker removal against already-invalid entities.
+    - Clear a player's markers when they change surface.
+---------------------------------------------------------------------------------------------------
 Version: 1.2.2
 Date: 25. 01. 2025
   Changes:

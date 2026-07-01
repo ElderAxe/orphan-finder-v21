@@ -1,0 +1,7 @@
+.*ignore
+.git
+.github
+.omc
+Makefile
+README*
+*.zip

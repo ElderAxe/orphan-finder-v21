@@ -2,7 +2,7 @@ arrow = util.table.deepcopy(data.raw["arrow"]["orange-arrow-with-circle"])
 arrow.name = "orphan-arrow"
 arrow.circle_picture =
 {
-  filename = "__Orphan Finder__/graphics/large-orange-circle.png",
+  filename = "__orphan-finder-v21__/graphics/large-orange-circle.png",
   draw_as_glow = true,
   priority = "low",
   width = 64,

@@ -1,5 +1,5 @@
 -- Create marker around provided entity and store reference to marker in storage.arrows[player_index][entity.unit_number]
-function create_arrow(entity, player_index)
+local function create_arrow(entity, player_index)
   storage.arrows = storage.arrows or {}
   storage.arrows[player_index] = storage.arrows[player_index] or {}
   storage.arrows[player_index][entity.unit_number] = entity.surface.create_entity{
@@ -10,11 +10,12 @@ end
 
 -- Remove marker from provided entity, clear it from storage and return true if one was found
 -- Markers are indexed by player first so loop over any players that have marker sets active
-function delete_arrow(entity)
+local function delete_arrow(entity)
   storage.arrows = storage.arrows or {}
   for i,_ in pairs(storage.arrows) do
-    if storage.arrows[i][entity.unit_number] then
-      storage.arrows[i][entity.unit_number].destroy()
+    local arrow = storage.arrows[i][entity.unit_number]
+    if arrow then
+      if arrow.valid then arrow.destroy() end
       storage.arrows[i][entity.unit_number] = nil
       return true
     end
@@ -23,12 +24,12 @@ function delete_arrow(entity)
 end
 
 -- Remove all markers belonging to provided player and return true if any were removed
-function clear_arrows(player_index)
+local function clear_arrows(player_index)
   storage.arrows = storage.arrows or {}
   storage.arrows[player_index] = storage.arrows[player_index] or {}
   local destroyed = false
   for _,arrow in pairs(storage.arrows[player_index]) do
-    arrow.destroy()
+    if arrow.valid then arrow.destroy() end
     destroyed = true
   end
   storage.arrows[player_index] = nil
@@ -36,19 +37,19 @@ function clear_arrows(player_index)
 end
 
 -- Belt is orphan if it has no neighbour or neighbour is still ghost
-function belt_is_orphan(entity)
+local function belt_is_orphan(entity)
   return not (entity.neighbours and entity.neighbours.type == "underground-belt")
 end
 
 -- Check neighbour of underground belt and remove marker if present
-function update_belt_neighbour(entity)
+local function update_belt_neighbour(entity)
   if entity.neighbours and entity.neighbours.type == "underground-belt" then
     delete_arrow(entity.neighbours)
   end
 end
 
 -- Returns maximum number of underground connections this entity can have
-function max_pipe_connections(entity)
+local function max_pipe_connections(entity)
   local count = 0
   for i,connection in pairs(entity.prototype.fluidbox_prototypes[1].pipe_connections) do
     -- Only counting underground connections, we do not care about the surface world
@@ -61,7 +62,7 @@ function max_pipe_connections(entity)
 end
 
 -- Rerturns how many underground pipes are actually connected to this entity
-function count_pipe_connections(entity)
+local function count_pipe_connections(entity)
   local count = 0
   for i,pipe in pairs(entity.fluidbox.get_pipe_connections(1)) do
     -- Only counting underground connections, we do not care about the surface world
@@ -74,7 +75,7 @@ end
 
 -- Count connections and compare to max, determine if orphan based on settings
 -- Max connections is optional to allow for caching values when searching many pipes
-function pipe_is_orphan(entity, max_connections)
+local function pipe_is_orphan(entity, max_connections)
   max_connections = max_connections or max_pipe_connections(entity)
   if max_connections == 0 then
     -- modded pipe has no underground connections therefore can never be an orphan
@@ -91,7 +92,7 @@ function pipe_is_orphan(entity, max_connections)
 end
 
 -- Check neighbours of underground pipe and remove arrow if they are no longer orphans
-function update_pipe_neighbours(entity)
+local function update_pipe_neighbours(entity)
   for i,neighbour in pairs(entity.neighbours[1]) do
     if not pipe_is_orphan(neighbour) then
       delete_arrow(neighbour)
@@ -166,6 +167,11 @@ script.set_event_filter(defines.events.on_entity_died,
 
 -- Player left, remove all their markers
 script.on_event(defines.events.on_player_left_game, function(event)
+  clear_arrows(event.player_index)
+end)
+
+-- Player changed surface, remove all their markers (they belonged to the old surface)
+script.on_event(defines.events.on_player_changed_surface, function(event)
   clear_arrows(event.player_index)
 end)
 
