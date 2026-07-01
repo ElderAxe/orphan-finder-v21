@@ -85,66 +85,57 @@ local function clear_arrows(player_index)
   return destroyed
 end
 
--- Belt is orphan if it has no neighbour or neighbour is still ghost
+-- Belt is orphan if it has no connected underground partner (a ghost partner does not count).
+-- Factorio 2.1 replaced LuaEntity.neighbours with the underground_belt_neighbour property.
 local function belt_is_orphan(entity)
-  return not (entity.neighbours and entity.neighbours.type == "underground-belt")
+  local neighbour = entity.underground_belt_neighbour
+  return not (neighbour and neighbour.type == "underground-belt")
 end
 
--- Check neighbour of underground belt and remove marker if present
+-- Underground belt gained a partner: remove that partner's marker if it had one
 local function update_belt_neighbour(entity)
-  if entity.neighbours and entity.neighbours.type == "underground-belt" then
-    delete_arrow(entity.neighbours)
+  local neighbour = entity.underground_belt_neighbour
+  if neighbour and neighbour.type == "underground-belt" then
+    delete_arrow(neighbour)
   end
 end
 
--- Returns maximum number of underground connections this entity can have
-local function max_pipe_connections(entity)
-  local count = 0
-  for i,connection in pairs(entity.prototype.fluidbox_prototypes[1].pipe_connections) do
+-- Determine if an underground pipe is an orphan from its fluidbox connection points.
+-- Factorio 2.1 replaced LuaEntity.neighbours / LuaFluidBox.get_pipe_connections with
+-- LuaEntity.get_fluid_box_pipe_connections, which lists every connection point (a point with
+-- a non-nil target is actually connected).
+local function pipe_is_orphan(entity)
+  local max_underground = 0
+  local connected_underground = 0
+  for _,conn in pairs(entity.get_fluid_box_pipe_connections(1) or {}) do
     -- Only counting underground connections, we do not care about the surface world
-    if connection.connection_type == "underground" then
-      count = count + 1
+    if conn.connection_type == "underground" then
+      max_underground = max_underground + 1
+      if conn.target then
+        connected_underground = connected_underground + 1
+      end
     end
   end
-  -- game.print(entity.name..": "..count.." underground connections cached")
-  return count
-end
-
--- Rerturns how many underground pipes are actually connected to this entity
-local function count_pipe_connections(entity)
-  local count = 0
-  for i,pipe in pairs(entity.fluidbox.get_pipe_connections(1)) do
-    -- Only counting underground connections, we do not care about the surface world
-    if pipe.target and pipe.connection_type == "underground" then
-      count = count + 1
-    end
-  end
-  return count
-end
-
--- Count connections and compare to max, determine if orphan based on settings
--- Max connections is optional to allow for caching values when searching many pipes
-local function pipe_is_orphan(entity, max_connections)
-  max_connections = max_connections or max_pipe_connections(entity)
-  if max_connections == 0 then
+  if max_underground == 0 then
     -- modded pipe has no underground connections therefore can never be an orphan
     return false
   end
-  local pipe_count = count_pipe_connections(entity)
   if settings.global["orphan-finder-underground-mode"].value == "strict" then
     -- Strict mode, only considered an orphan if no underground connections
-    return pipe_count == 0
+    return connected_underground == 0
   else
-    -- Loose mode, considered an orphan if less than maximum underground connections
-    return pipe_count < max_connections
+    -- Loose mode, considered an orphan if fewer than the maximum underground connections
+    return connected_underground < max_underground
   end
 end
 
--- Check neighbours of underground pipe and remove arrow if they are no longer orphans
+-- Underground pipe changed: remove markers from any connected underground pipe that is no longer an orphan
 local function update_pipe_neighbours(entity)
-  for i,neighbour in pairs(entity.neighbours[1]) do
-    if not pipe_is_orphan(neighbour) then
-      delete_arrow(neighbour)
+  for _,conn in pairs(entity.get_fluid_box_pipe_connections(1) or {}) do
+    if conn.connection_type == "underground" and conn.target and conn.target.type == "pipe-to-ground" then
+      if not pipe_is_orphan(conn.target) then
+        delete_arrow(conn.target)
+      end
     end
   end
 end
@@ -177,12 +168,8 @@ local function toggle_orphans(player)
         radius = search_range,
         type = "pipe-to-ground"
       }
-      -- Create cache of max pipe counts so we don't have to count prototype connections again for every single underground pipe in the search area
-      local max_cache = {}
       for _,pipe in pairs(pipes) do
-        max_cache[pipe.name] = max_cache[pipe.name] or max_pipe_connections(pipe)
-        local max_pipes = max_cache[pipe.name]
-        if pipe_is_orphan(pipe, max_pipes) then
+        if pipe_is_orphan(pipe) then
           create_arrow(pipe, player_index)
           count = count + 1
         end
